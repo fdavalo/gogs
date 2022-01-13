@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gogs-postgresql
-  namespace: gogs
   annotations:
     image.openshift.io/triggers: >-
         [{"from":{"kind":"ImageStreamTag","name":"postgresql:latest", "namespace":"openshift"},"fieldPath":"spec.template.spec.containers[?(@.name==\"postgresql\")].image"}]
@@ -75,7 +74,6 @@ kind: Service
 apiVersion: v1
 metadata:
   name: gogs-postgresql
-  namespace: gogs
   labels:
     app: gogs
 spec:
@@ -91,7 +89,6 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: gogs-postgres-data
-  namespace: gogs
   labels:
     appname: gogs
 spec:
