@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gogs-files
+  namespace: gogs  
+data:
+    app.ini: |
+      RUN_MODE = prod
+      RUN_USER = gogs
+      [database]
+      DB_TYPE  = postgres
+      HOST     = gogs-postgresql:5432
+      NAME     = gogs
+      USER     = gogs
+      PASSWD   = gogs
+      [repository]
+      ROOT = /opt/gogs/data/repositories
+      [server]
+      ROOT_URL=http://@HOSTNAME
+      SSH_DOMAIN=@HOSTNAME
+      [security]
+      INSTALL_LOCK = true
+      [service]
+      ENABLE_CAPTCHA = false
+      [webhook]
+      SKIP_TLS_VERIFY = true   
+    init-gogs.py: |
+      #!/usr/bin/env python3
+      import os
+      import requests 
+      gogs_user = "gogs"
+      gogs_pwd = "gogs"
+      gogsURL = "http://" + os.popen('oc get svc gogs -o template --template="{{.spec.clusterIP}}"').read() + ":3000"
+      # create admin user
+      done = True
+      data_user = {
+      'user_name': gogs_user,
+      'password': gogs_pwd,
+      'retype': gogs_pwd,
+      'email': 'admin@gogs.com'
+      }
+      resp = requests.post(url = gogsURL + "/user/sign_up", data = data_user) 
+      if resp.status_code != 200:
+        print("Error creating Gogs admin (status code: {})".format(resp.status_code))
+        print(resp.content)
+        done = False
+      else:
+        print("Created admin user {}:{}".format(gogs_user, gogs_pwd))
+
+      data_org = {
+        "username": "gogs",
+        "full_name": "Gogs",
+        "description": "Gogs is a painless self-hosted Git Service.",
+        "website": "https://gogs.io",
+        "location": "USA"
+      }
+      resp = requests.post(url = gogsURL + "/admin/users/gogs/orgs", data = data_org) 
+      if resp.status_code != 200:
+        print("Error creating Gogs org (status code: {})".format(resp.status_code))
+        print(resp.content)
+        done = False
+      else:
+        print("Created org {}:{}".format(gogs_user, gogs_pwd))
+
+      # create git repo spring-petclinic
+      data_repo = '{"clone_addr": "https://github.com/siamaksade/spring-petclinic", "uid": 1, "repo_name": "spring-petclinic"}'
+      headers = {'Content-Type': 'application/json'}
+      resp = requests.post(url = gogsURL + "/api/v1/repos/migrate", headers = headers, auth = (gogs_user, gogs_pwd), data = data_repo)  
+      if resp.status_code != 200 and resp.status_code != 201:
+        print("Error creating git repo (status code: {})".format(resp.status_code))
+        print(resp.content)
+        done = False
+      else:
+        print("Created git repo spring-petclinic")
+
+      if done:
+        file = open("/opt/gogs/data/init-gogs.done", "w")
+        file.write("done")
+        file.close()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gogs
+  namespace: gogs
+  labels:
+    app: gogs
+    app.kubernetes.io/component: gogs
+    app.kubernetes.io/instance: gogs
+    app.kubernetes.io/name: gogs
+    app.kubernetes.io/part-of: gogs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gogs
+      name: gogs
+  template:
+    metadata:
+      labels:
+        app: gogs
+        name: gogs
+    spec:
+      initContainers:
+      - name: init-config
+        image: 'quay.io/openshift/origin-cli'
+        command:
+              - /bin/bash
+              - '-c'
+        args:
+              - >-
+                if [[ ! -f /etc/gogs/conf/app.ini ]]; then
+                
+                  while [[ true ]]; do oc get route gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
+
+                  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}')
+
+                  sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" /etc/files/app.ini > /etc/gogs/conf/app.ini
+                
+                fi
+                
+                if [[ ! -f /etc/gogs/conf/app.ini ]]; then
+                
+                  exit 1
+                
+                fi
+        volumeMounts:
+        - name: gogs-files
+          mountPath: /etc/files
+        - name: gogs-conf
+          mountPath: /etc/gogs/conf          
+      containers:
+      - name: gogs
+        imagePullPolicy: Always
+        image: quay.io/siamaksade/gogs:stable
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        volumeMounts:
+        - name: gogs-data
+          mountPath: /opt/gogs/data
+        - name: gogs-conf
+          mountPath: /etc/gogs/conf          
+        readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 40
+            timeoutSeconds: 1
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 10
+        livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 40
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 10
+      - name: init-repos
+        image: 'quay.io/siamaksade/python-oc'
+        command:
+              - /bin/bash
+              - '-c'
+        args:
+              - >-
+                if [[ ! -f /opt/gogs/data/init-gogs.done ]]; then
+
+                  while [[ true ]]; do oc get svc gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
+
+                  GOGS_URL=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
+                  
+                  while [[ true ]]; do curl http://$GOGS_URL:3000; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
+                  
+                  python3 /etc/files/init-gogs.py http://$GOGS_URL:3000
+                
+                fi
+
+                tail -f /dev/null
+        volumeMounts:
+        - name: gogs-files
+          mountPath: /etc/files
+        - name: gogs-data
+          mountPath: /opt/gogs/data
+      volumes:
+      - name: gogs-data
+        persistentVolumeClaim:
+          claimName: gogs-data
+      - name: gogs-files
+        configMap:
+          name: gogs-files
+      - name: gogs-conf
+        emptyDir: {}          
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: gogs
+  name: gogs
+  namespace: gogs  
+spec:
+  ports:
+  - name: 3000-tcp
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: gogs
+    name: gogs
+  type: ClusterIP
+--- 
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gogs-data
+  namespace: gogs  
+  labels:
+    app: gogs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi  
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  labels:
+    app: gogs
+  name: gogs
+  namespace: gogs  
+spec:
+  port:
+    targetPort: 3000-tcp
+  to:
+    kind: Service
+    name: gogs
+    weight: 100
+

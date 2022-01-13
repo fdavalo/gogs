@@ -1,0 +1,6 @@
+resources:
+- gogs.yaml
+- gogs-postgre.yaml
+- gogs-pvc.yaml
+- rolebinding.yaml
+- scc.yaml

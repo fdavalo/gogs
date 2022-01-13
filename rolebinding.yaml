@@ -1,0 +1,36 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: service-introspection
+  namespace: gogs    
+rules:
+  - verbs:
+      - list
+      - watch
+      - get
+    apiGroups:
+      - ''
+    resources:
+      - services
+  - verbs:
+      - list
+      - watch
+      - get
+    apiGroups:
+      - 'route.openshift.io'
+    resources:
+      - routes   
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: service-introspection
+  namespace: gogs
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: gogs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: service-introspection
