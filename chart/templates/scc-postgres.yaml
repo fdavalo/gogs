@@ -1,6 +1,6 @@
 kind: SecurityContextConstraints
 metadata:
-  name: nonroot-gogs-postgres
+  name: nonroot-{{ .Release.Namespace }}-postgres
 allowHostPorts: false
 priority: null
 requiredDropCapabilities:
@@ -12,7 +12,7 @@ allowPrivilegedContainer: false
 runAsUser:
   type: MustRunAsNonRoot
 users: 
-  - 'system:serviceaccount:gogs:default'    
+  - 'system:serviceaccount:{{ .Release.Namespace }}:default'    
 allowHostDirVolumePlugin: false
 allowHostIPC: false
 seLinuxContext:
