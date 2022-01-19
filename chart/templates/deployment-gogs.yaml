@@ -32,7 +32,7 @@ spec:
                 
                   while [[ true ]]; do oc get route gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
 
-                  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}')
+                  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{ "{{" }}.spec.host{{ "}}" }}')
 
                   sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" /etc/files/app.ini > /etc/gogs/conf/app.ini
                 
@@ -91,7 +91,7 @@ spec:
 
                   while [[ true ]]; do oc get svc gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
 
-                  GOGS_URL=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
+                  GOGS_URL=$(oc get svc gogs -o template --template='{{ "{{" }}.spec.clusterIP{{ "}}" }}')
                   
                   while [[ true ]]; do curl http://$GOGS_URL:3000; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
                   
