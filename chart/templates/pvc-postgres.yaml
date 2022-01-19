@@ -7,7 +7,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: {{ .Values.postregs.storageClass | quote }}
+  storageClassName: {{ .Values.postgres.storageClass | quote }}
   resources:
     requests:
       storage: 1Gi
