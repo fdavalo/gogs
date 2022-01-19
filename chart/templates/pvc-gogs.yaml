@@ -1,0 +1,14 @@
+--- 
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gogs-data
+  labels:
+    appname: gogs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.gogs.storageClass | quote }}
+  resources:
+    requests:
+      storage: 1Gi  

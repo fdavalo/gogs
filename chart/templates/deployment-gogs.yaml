@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gogs
+  labels:
+    app: gogs
+    app.kubernetes.io/component: gogs
+    app.kubernetes.io/instance: gogs
+    app.kubernetes.io/name: gogs
+    app.kubernetes.io/part-of: gogs
+spec:
+  replicas: {{ .Values.gogs.replicas }} 
+  selector:
+    matchLabels:
+      app: gogs
+      name: gogs
+  template:
+    metadata:
+      labels:
+        app: gogs
+        name: gogs
+    spec:
+      initContainers:
+      - name: init-config
+        image: 'quay.io/openshift/origin-cli'
+        command:
+              - /bin/bash
+              - '-c'
+        args:
+              - >-
+                if [[ ! -f /etc/gogs/conf/app.ini ]]; then
+                
+                  while [[ true ]]; do oc get route gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
+
+                  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}')
+
+                  sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" /etc/files/app.ini > /etc/gogs/conf/app.ini
+                
+                fi
+                
+                if [[ ! -f /etc/gogs/conf/app.ini ]]; then
+                
+                  exit 1
+                
+                fi
+        volumeMounts:
+        - name: gogs-files
+          mountPath: /etc/files
+        - name: gogs-conf
+          mountPath: /etc/gogs/conf          
+      containers:
+      - name: gogs
+        imagePullPolicy: Always
+        image: quay.io/siamaksade/gogs:stable
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        volumeMounts:
+        - name: gogs-data
+          mountPath: /opt/gogs/data
+        - name: gogs-conf
+          mountPath: /etc/gogs/conf          
+        readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 40
+            timeoutSeconds: 1
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 10
+        livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 40
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 10
+      - name: init-repos
+        image: 'quay.io/siamaksade/python-oc'
+        command:
+              - /bin/bash
+              - '-c'
+        args:
+              - >-
+                if [[ ! -f /opt/gogs/data/init-gogs.done ]]; then
+
+                  while [[ true ]]; do oc get svc gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
+
+                  GOGS_URL=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
+                  
+                  while [[ true ]]; do curl http://$GOGS_URL:3000; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
+                  
+                  python3 /etc/files/init-gogs.py http://$GOGS_URL:3000
+                
+                fi
+
+                tail -f /dev/null
+        volumeMounts:
+        - name: gogs-files
+          mountPath: /etc/files
+        - name: gogs-data
+          mountPath: /opt/gogs/data
+      volumes:
+      - name: gogs-data
+        persistentVolumeClaim:
+          claimName: gogs-data
+      - name: gogs-files
+        configMap:
+          name: gogs-files
+      - name: gogs-conf
+        emptyDir: {}          
+
