@@ -29,7 +29,7 @@ data:
       import requests 
       gogs_user = "gogs"
       gogs_pwd = "gogs"
-      gogsURL = "http://" + os.popen('oc get svc gogs -o template --template="{{.spec.clusterIP}}"').read() + ":3000"
+      gogsURL = "http://" + os.popen('oc get svc gogs -o template --template="{{ "{{" }}.spec.clusterIP{{ "}}" }}"').read() + ":3000"
       # create admin user
       done = True
       data_user = {
