@@ -7,15 +7,15 @@ metadata:
   labels:
     app: gogs-init
 spec:
-      containers:
-      - name: postgresql
-        command: ["sh", "-c", "chown 26 /data"]
-        imagePullPolicy: Always
-        image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
-        volumeMounts:
-        - mountPath: /data
-          name: gogs-postgres-data     
-      volumes:
-      - name: gogs-postgres-data
-        persistentVolumeClaim:
-          claimName: gogs-postgres-data
+  restartPolicy: OnFailure
+  containers:
+  - name: postgresql
+    command: ["sh", "-c", "chown 26 /data"]
+    image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+    volumeMounts:
+    - mountPath: /data
+      name: gogs-postgres-data     
+  volumes:
+  - name: gogs-postgres-data
+    persistentVolumeClaim:
+      claimName: gogs-postgres-data
