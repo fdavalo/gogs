@@ -3,6 +3,7 @@ apiVersion: v1
 metadata:
   annotations:
     helm.sh/hook-weight: "-2"
+    helm.sh/hook: pre-install    
   name: gogs-postgres-data
   labels:
     appname: gogs
