@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    helm.sh/hook-weight: -1
+    helm.sh/hook-weight: "-1"
   name: gogs-postgresql-init
   labels:
     app: gogs-init
