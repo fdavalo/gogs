@@ -2,7 +2,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   annotations:
-    helm.sh/hook-weight: -2
+    helm.sh/hook-weight: "-2"
   name: gogs-postgres-data
   labels:
     appname: gogs
