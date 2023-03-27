@@ -12,7 +12,7 @@ spec:
   restartPolicy: OnFailure
   containers:
   - name: postgresql
-    command: ["sh", "-c", "chown 26 /data"]
+    command: ["sh", "-c", "chown -R 26 /data"]
     image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
     volumeMounts:
     - mountPath: /data
