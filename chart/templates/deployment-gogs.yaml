@@ -22,6 +22,8 @@ spec:
     spec:
       initContainers:
       - name: init-config
+        securityContext:
+          runAsUser: 26      
         image: 'quay.io/openshift/origin-cli'
         command:
               - /bin/bash
@@ -50,6 +52,8 @@ spec:
           mountPath: /etc/gogs/conf          
       containers:
       - name: gogs
+        securityContext:
+          runAsUser: 26      
         imagePullPolicy: Always
         image: quay.io/siamaksade/gogs:stable
         ports:
