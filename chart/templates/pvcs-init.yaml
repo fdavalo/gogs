@@ -21,27 +21,4 @@ spec:
   - name: gogs-postgres-data
     persistentVolumeClaim:
       claimName: gogs-postgres-data
----
-apiVersion: v1
-kind: Pod
-metadata:
-  annotations:
-    helm.sh/hook-weight: "-1"
-    helm.sh/hook: pre-install
-    helm.sh/hook-delete-policy: hook-succeeded    
-  name: gogs-init
-  labels:
-    app: gogs-init
-spec:
-  restartPolicy: OnFailure
-  containers:
-  - name: data
-    command: ["sh", "-c", "chown -R 26 /data"]
-    image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
-    volumeMounts:
-    - mountPath: /data
-      name: gogs-data     
-  volumes:
-  - name: gogs-data
-    persistentVolumeClaim:
-      claimName: gogs-data
+
