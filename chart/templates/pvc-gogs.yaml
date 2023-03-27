@@ -2,10 +2,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: gogs-data
-  annotations:
-    helm.sh/hook-weight: "-2"
-    helm.sh/hook: pre-install    
+  name: gogs-data  
   labels:
     appname: gogs
 spec:
