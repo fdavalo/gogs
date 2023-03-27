@@ -22,8 +22,6 @@ spec:
     spec:
       initContainers:
       - name: init-config
-        securityContext:
-          runAsUser: 26      
         image: 'quay.io/openshift/origin-cli'
         command:
               - /bin/bash
@@ -51,9 +49,7 @@ spec:
         - name: gogs-conf
           mountPath: /etc/gogs/conf          
       containers:
-      - name: gogs
-        securityContext:
-          runAsUser: 26      
+      - name: gogs    
         imagePullPolicy: Always
         image: quay.io/siamaksade/gogs:stable
         ports:
@@ -84,9 +80,7 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 10
-      - name: init-repos
-        securityContext:
-          runAsUser: 26            
+      - name: init-repos        
         image: 'quay.io/siamaksade/python-oc'
         command:
               - /bin/bash
