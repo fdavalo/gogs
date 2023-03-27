@@ -85,6 +85,8 @@ spec:
             successThreshold: 1
             failureThreshold: 10
       - name: init-repos
+        securityContext:
+          runAsUser: 26            
         image: 'quay.io/siamaksade/python-oc'
         command:
               - /bin/bash
