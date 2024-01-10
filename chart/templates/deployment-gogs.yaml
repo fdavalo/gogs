@@ -51,7 +51,7 @@ spec:
       containers:
       - name: gogs    
         imagePullPolicy: Always
-        image: quay.io/siamaksade/gogs:stable
+        image: quay.io/gpte-devops-automation/gogs:latest
         ports:
         - containerPort: 3000
           protocol: TCP
