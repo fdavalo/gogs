@@ -28,17 +28,17 @@ spec:
               - '-c'
         args:
               - >-
-                if [[ ! -f /etc/gogs/conf/app.ini ]]; then
+                if [[ ! -f /etc/gogs/custom/conf/app.ini ]]; then
                 
                   while [[ true ]]; do oc get route gogs; if [[ $? -eq 0 ]]; then break; fi; sleep 1; done
 
                   GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{ "{{" }}.spec.host{{ "}}" }}')
 
-                  sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" /etc/files/app.ini > /etc/gogs/conf/app.ini
+                  sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" /etc/files/app.ini > /etc/gogs/custom/conf/app.ini
                 
                 fi
                 
-                if [[ ! -f /etc/gogs/conf/app.ini ]]; then
+                if [[ ! -f /etc/gogs/custom/conf/app.ini ]]; then
                 
                   exit 1
                 
