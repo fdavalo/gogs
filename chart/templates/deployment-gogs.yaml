@@ -47,7 +47,7 @@ spec:
         - name: gogs-files
           mountPath: /etc/files
         - name: gogs-conf
-          mountPath: /etc/gogs/conf          
+          mountPath: /etc/gogs/custom/conf          
       containers:
       - name: gogs    
         imagePullPolicy: Always
@@ -59,7 +59,7 @@ spec:
         - name: gogs-data
           mountPath: /opt/gogs/data
         - name: gogs-conf
-          mountPath: /etc/gogs/conf          
+          mountPath: /etc/gogs/custom/conf          
         readinessProbe:
             httpGet:
               path: /
